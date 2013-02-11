@@ -127,8 +127,6 @@
       (switch-to-buffer term-buffer)
       term-buffer)))
 
-;; (setq kill-buffer-hook nil)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; derived from http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/
@@ -289,6 +287,7 @@ a GNU screen session name."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun -navorski-term-from-globals ()
+  "Creates a terminal depending on global variables."
   (cond
    ((and navorski-remote-host
           navorski-screen-session-name)
