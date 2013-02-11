@@ -1,4 +1,26 @@
+;;; navorski.el --- Making you live in the terminal
+
+;; Copyright (C) 2013 Birdseye Software.
+
+;; Author: Roman Gonzalez <romanandreg@gmail.com>
+;; Version: 0.1.0
+;; Keywords: terminal
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.  This program is
+;; distributed in the hope that it will be useful, but WITHOUT ANY
+;; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+;; License for more details.  You should have received a copy of the
+;; GNU General Public License along with this program.  If not, see
+;; <http://www.gnu.org/licenses/>.
+
 ;;; Require:
+
 (require 'multi-term)
 (require 'assoc)
 (require 'dash)
@@ -309,6 +331,10 @@ a GNU screen session name."
 
      GNU screen session to use for this terminal.
 
+     - :init-script (string)
+
+     Sends an initial string to the terminal.
+
      - :setup-tramp (bool)
 
      Enables tramp integration.
@@ -377,7 +403,8 @@ a GNU screen session name."
                              (navorski-program-path ,(aget args :program-path))
                              (navorski-program-args ,(aget args :program-args))
                              (navorski-screen-session-name ,(aget args :screen-session-name))
-                             (navorski-unique-buffer t)))))
+                             (navorski-unique-buffer t)
+                             (init-script ,(aget args :init-script))))))
 
     `(progn
 
@@ -393,8 +420,9 @@ a GNU screen session name."
                   `((let ((term-buffer (or (get-buffer (format "*%s*" navorski-buffer-name))
                                             (-navorski-term-from-globals))))
                       (with-current-buffer term-buffer
-                        (,(intern (format "%s-terminal-mode" profile-name))))
-
+                        (,(intern (format "%s-terminal-mode" profile-name)))
+                        (when init-script
+                          (term-send-raw-string init-script)))
                       term-buffer))))
 
        (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
