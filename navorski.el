@@ -1,4 +1,4 @@
-;;; navorski.el --- Making you live in the terminal
+;;; navorski.el --- Helping you live in the terminal, like Victor did.
 
 ;; Copyright (C) 2013 Birdseye Software.
 
@@ -204,20 +204,20 @@ user@host) value will be required to perform the connection."
                           (list "-p" navorski-remote-port)))
          (navorski-program-path "ssh")
          (navorski-buffer-name (or buffer-name
-                                     navorski-buffer-name
-                                     "remote-terminal"))
+                                   navorski-buffer-name
+                                   "remote-terminal"))
          (navorski-unique-buffer (or unique?
                                      navorski-unique-buffer))
          (navorski-program-args (append remote-port
-                                       (list user+host)
-                                       screen-shell))
+                                        (list user+host)
+                                        screen-shell))
          (term-buffer (-navorski-get-buffer)))
     (with-current-buffer term-buffer
-      (let ((user-host (split-string navorski-remote-host "@")))
+      (let ((user-host (split-string user+host "@")))
         (when navorski-setup-tramp
-            (if (= (length user-host) 1)
-                (nav/setup-tramp (car user-host))
-              (nav/setup-tramp (nth 1 user-host))))))
+          (if (= (length user-host) 1)
+              (nav/setup-tramp (car user-host))
+            (nav/setup-tramp (nth 1 user-host))))))
     term-buffer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
