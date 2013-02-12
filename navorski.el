@@ -1,8 +1,8 @@
-;;; navorski.el --- Helping you live in the terminal, like Victor did.
+;;; navorski.el --- Helping you live in the terminal, like Viktor did.
 
 ;; Copyright (C) 2013 Birdseye Software.
 
-;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@damnsimple.com>
+;; Author: Roman Gonzalez <roman@birdseye-sw.com>, Tavis Rudd <tavis@birdseye-sw.com>
 ;; Version: 0.1.0
 ;; Keywords: terminal
 
