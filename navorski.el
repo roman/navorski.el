@@ -196,7 +196,9 @@ user@host) value will be required to perform the connection."
   (interactive)
   (let* ((user+host (or user+host
                         navorski-remote-host
-                        (read-from-minibuffer "SSH address (e.g user@host): ")))
+                        (read-from-minibuffer
+                         "SSH address (e.g user@host): " nil nil nil
+                         'nav/remote-term)))
          (screen-shell (-navorski-get-shell-path screen-shell))
          (screen-shell (if screen-shell
                            (list "-t" (format "\"%s\"" screen-shell))))
@@ -228,7 +230,8 @@ session name is required."
   (interactive)
   (let* ((session-name (or session-name
                            navorski-screen-session-name
-                           (read-from-minibuffer "Session name: ")))
+                           (read-from-minibuffer "Session name: " nil nil nil
+                                                 'nav/persistent-term)))
          (screen-shell (-navorski-get-shell-path screen-shell))
          (navorski-unique-buffer (or unique?
                                      navorski-unique-buffer))
