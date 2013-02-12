@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2013 Birdseye Software.
 
-;; Author: Roman Gonzalez <romanandreg@gmail.com>
+;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@damnsimple.com>
 ;; Version: 0.1.0
 ;; Keywords: terminal
 
