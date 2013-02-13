@@ -434,7 +434,8 @@ a GNU screen session name."
        (define-minor-mode ,(intern (format "%s-terminal-mode" profile-name))
          ,(format "Minor mode for navorski terminal `%s'." profile-name)
          nil
-         :group `,(intern "%s-navorski-terminal" profile-name))
+         :group `,(intern "%s-navorski-terminal" profile-name)
+         :keymap (make-sparse-keymap))
 
        ;; nav/<profile-name>-create-buffer
        (defun ,(intern (format "nav/%s-create-buffer" profile-name)) ()
