@@ -448,7 +448,9 @@ a GNU screen session name."
                   '((let ((term-buffer (get-buffer (format "*%s*"
                                                            navorski-buffer-name))))
                       (when term-buffer
-                        (term-send-region term-buffer start end))))))
+                        (let ((content (buffer-substring start end)))
+                          (with-current-buffer term-buffer
+                            (term-send-raw-string (concat content "\n")))))))))
 
        ;; nav/<profile-name>-send-string
        (defun ,(intern (format "nav/%s-send-string" profile-name)) (raw-str)
