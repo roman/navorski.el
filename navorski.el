@@ -121,11 +121,32 @@
           (set-process-sentinel term-process
                                `(lambda (proc change)
                                   (when (string-match "exited abnormally with code" change)
-                                    (message "navorski: process exited abnormally")
-                                    (sleep-for 1))
+                                    (message "navorski: new content in buffer *navorski-error*")
+                                    (let ((term-failed-name (buffer-name))
+                                          (error-str (buffer-string)))
+                                      (save-window-excursion
+                                        (pop-to-buffer "*navorski-error*")
+                                        (goto-char (point-max))
+                                        (insert
+                                         (concat "==== "
+                                                 term-failed-name
+                                                 " ==== ("
+                                                 (time-stamp-string)
+                                                 ") \n"
+                                                 error-str
+                                                 "\n"))))
+                                    (pop-to-buffer "*navorski-error*"))
                                  (funcall ',current-sentinel proc change)))))
       (switch-to-buffer term-buffer)
       term-buffer)))
+
+;; (defun blah/testing (content)
+;;   (interactive "sContent: ")
+;;   (save-window-excursion
+;;     (pop-to-buffer "*gleidy*")
+;;     (goto-char (point-max))
+;;     ))
+;; (fmakunbound 'blah/testing)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
