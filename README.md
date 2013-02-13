@@ -6,7 +6,7 @@ terminals (local or remote).
 ## Emacs version
 
 This extension has been tested with emacs 24.1.1 on Mac OS X Lion
-and Gentoo
+and Gentoo.
 
 ## Dependencies
 
@@ -17,7 +17,7 @@ This extension will require:
 
 ## Installation
 
-Currently this extension is only available through [el-get](https://github.com/dimitri/el-get)
+Currently this extension is only available through [el-get](https://github.com/dimitri/el-get).
 
 ## Getting Started
 
@@ -36,6 +36,7 @@ and call the generated `pop-to-buffer` function.
   :buffer-name "production-console"
   :screen-session-name "production_console"
   :remote-host "user@production"
+  :setup-tramp nil
   :init-script "cd project-path && bundle exec rails c\n")
 
 ;; NOTE: the newline in the init-script is important
@@ -45,8 +46,7 @@ and call the generated `pop-to-buffer` function.
 
 (nav/defterminal ipython
   :buffer-name "dev-console"
-  :proccess-path "/usr/bin/ipython"
-  :setup-tramp nil)
+  :proccess-path "/usr/bin/ipython")
 
 ;; M-x: (nav/ipython-pop-to-buffer)
 ;; will open a new buffer to a local ipython session.
