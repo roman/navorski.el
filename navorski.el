@@ -140,14 +140,6 @@
       (switch-to-buffer term-buffer)
       term-buffer)))
 
-;; (defun blah/testing (content)
-;;   (interactive "sContent: ")
-;;   (save-window-excursion
-;;     (pop-to-buffer "*gleidy*")
-;;     (goto-char (point-max))
-;;     ))
-;; (fmakunbound 'blah/testing)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; derived from http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/
