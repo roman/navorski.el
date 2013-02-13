@@ -450,9 +450,12 @@ a GNU screen session name."
        (defun ,(intern (format "nav/%s-pop-to-buffer" profile-name)) ()
           (interactive)
           ,(append let-options
-                   `((let ((term-buffer (,(intern (format "nav/%s-create-buffer"
+                   `((let ((term-buffer (,(intern (format "nav/%s-get-buffer"
                                                           profile-name)))))
-                       (pop-to-buffer (format "*%s*" navorski-buffer-name))))))
+                       (if term-buffer
+                           (pop-to-buffer term-buffer)
+                         (pop-to-buffer (,(intern (format "nav/%s-create-buffer"
+                                                          profile-name)))))))))
 
        ;; nav/<profile-name>-send-region
        (defun ,(intern (format "nav/%s-send-region" profile-name)) (start end)
