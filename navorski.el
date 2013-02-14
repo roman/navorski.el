@@ -39,6 +39,9 @@
   "Default GNU screen session name."
   :type 'string)
 
+(defcustom navorski-verbose nil
+  "Print debug information on message buffer")
+
 (defcustom navorski-program-path nil
   "Path for program to execute."
   :type '(repeat string))
@@ -113,30 +116,35 @@
                                 (apply #'make-term
                                        buffer-name shell-name nil program-args)
                               (make-term buffer-name shell-name)))))
-      (message "%s %s" navorski-program-path navorski-program-args)
+      (when navorski-verbose
+        (message "navorski executing: %s %s"
+                 shell-name
+                 (or (and program-args
+                          (mapconcat 'identity program-args " "))
+                     "")))
       (with-current-buffer term-buffer
         (multi-term-internal)
         (let* ((term-process (get-buffer-process term-buffer))
                (current-sentinel (process-sentinel term-process)))
           (set-process-sentinel term-process
-                               `(lambda (proc change)
-                                  (when (string-match "exited abnormally with code" change)
-                                    (message "navorski: new content in buffer *navorski-error*")
-                                    (let ((term-failed-name (buffer-name))
-                                          (error-str (buffer-string)))
-                                      (save-window-excursion
-                                        (pop-to-buffer "*navorski-error*")
-                                        (goto-char (point-max))
-                                        (insert
-                                         (concat "==== "
-                                                 term-failed-name
-                                                 " ==== ("
-                                                 (time-stamp-string)
-                                                 ") \n"
-                                                 error-str
-                                                 "\n"))))
-                                    (pop-to-buffer "*navorski-error*"))
-                                 (funcall ',current-sentinel proc change)))))
+                                `(lambda (proc change)
+                                   (when (string-match "exited abnormally with code" change)
+                                     (message "navorski: new content in buffer *navorski-error*")
+                                     (let ((term-failed-name (buffer-name))
+                                           (error-str (buffer-string)))
+                                       (save-window-excursion
+                                         (pop-to-buffer "*navorski-error*")
+                                         (goto-char (point-max))
+                                         (insert
+                                          (concat "==== "
+                                                  term-failed-name
+                                                  " ==== ("
+                                                  (time-stamp-string)
+                                                  ") \n"
+                                                  error-str
+                                                  "\n"))))
+                                     (pop-to-buffer "*navorski-error*"))
+                                   (funcall ',current-sentinel proc change)))))
       (switch-to-buffer term-buffer)
       term-buffer)))
 
