@@ -409,6 +409,7 @@ a GNU screen session name."
   nav/root-production-kill-buffer
   nav/root-production-send-string
   nav/root-production-send-region"
+
   (let* ((args (-map (lambda (it) `(,(nth 0 it) . ,(nth 1 it)))
                      (-partition 2 args)))
          (let-options `(let ((navorski-buffer-name ,(aget args :buffer-name))
@@ -421,6 +422,7 @@ a GNU screen session name."
                              (navorski-unique-buffer t)
                              (init-script ,(aget args :init-script))))))
 
+    (assert (aget args :buffer-name) nil "nav/defterminal => :buffer-name option is required")
     `(progn
 
        (define-minor-mode ,(intern (format "%s-terminal-mode" profile-name))
