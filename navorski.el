@@ -21,6 +21,7 @@
 
 ;;; Require:
 
+(require 'time-stamp)
 (require 'multi-term)
 (require 'assoc)
 (require 'dash)
