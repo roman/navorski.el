@@ -185,21 +185,14 @@
         buffer-name
       (-navorski-next-buffer-name buffer-name))))
 
-(defun -navorski-get-init-script (profile)
-  (let ((init-script (aget profile :init-script)))
-    (cond
-     ((and init-script
-           (listp init-script)) init-script)
-     (init-script (list init-script))
-     (t nil))))
+
 
 (defun -navorski-decorate-multi-term-sentinel (profile term-buffer)
   (let* ((term-process (get-buffer-process term-buffer))
          (current-sentinel (process-sentinel term-process)))
-    ;; (setq profile (-navorski-add-term-init-flag profile))
     (set-process-sentinel term-process
                           `(lambda (proc change)
-                             (if (string-match "exited abnormally with code \\(\d+\\)" change)
+                             (if (string-match "exited abnormally with code \\([0-9]+\\)" change)
                                  (if (string-equal (match-string 1 change) "126")
                                      (message "navorski: %s" change)
                                    (funcall ',current-sentinel proc change))
@@ -296,12 +289,6 @@ function eterm_set_variables {\n"
                            "SSH address (e.g user@host): " nil nil nil
                            'nav/remote-term)))
          (remote-program-path (-navorski-get-shell-path profile))
-         (remote-init-script (if (aget profile :use-tramp)
-                                 (append (list
-                                          (-navorski-setup-tramp-string
-                                           (-navorski-get-ssh-host profile)))
-                                         (-navorski-get-init-script profile))
-                               (aget profile :init-script)))
          (local-program-args (append
                               (list "-t")
                               (and (aget profile :remote-port)
@@ -312,10 +299,10 @@ function eterm_set_variables {\n"
                               (aget profile :program-args))))
 
     (-navorski-merge-alist
-     profile
+     (-navorski-add-to-init-script profile (-navorski-setup-tramp-string
+                                            (-navorski-get-ssh-host profile)))
      `((:program-path . "ssh")
        (:program-args . ,local-program-args)
-       (:init-script  . ,remote-init-script)
        (:remote-host  . ,remote-host)
        (:buffer-name  . ,(or (aget profile :buffer-name)
                              "remote-terminal"))))))
@@ -376,6 +363,17 @@ a GNU screen session name."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun -navorski-get-init-script (profile)
+  (let ((init-script (aget profile :init-script)))
+    (cond
+     ((and init-script
+           (listp init-script)) init-script)
+     (init-script (list init-script))
+     (t '()))))
+
+(defun -navorski-add-to-init-script (profile cmd)
+  (let ((init-script (append (list cmd) (-navorski-get-init-script profile))))
+    (-navorski-merge-alist profile `((:init-script . ,init-script)))))
 
 ;; DO NOT USE THIS FUNCTION - Use -navorski-get-terminal instead
 (defun -navorski-profile-create-terminal (profile)
@@ -543,6 +541,8 @@ a GNU screen session name."
        (defun ,(intern (format "nav/%s-kill-buffer" profile-name)) (&optional kill-process)
          (interactive)
          (-navorski-profile-kill-buffer ',profile kill-process)))))
+
+(put 'nav/defterminal 'lisp-indent-function 'defun)
 
 ;; End:
 (provide 'navorski)
