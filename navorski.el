@@ -151,7 +151,7 @@
     a1_))
 
 (defun -navorski-get-shell-path (profile)
-  (or (aget profile :program-path)
+  (or (-navorski-profile-get profile :program-path)
       (getenv "SHELL")
       (getenv "ESHELL")
       "/bin/sh"))
@@ -203,8 +203,8 @@
   (with-temp-buffer
     (let* ((shell-name   (-navorski-get-shell-path profile))
            (buffer-name  (-navorski-get-buffer-name profile))
-           (program-args (aget profile :program-args))
-           (init-script (-navorski-get-init-script profile))
+           (program-args (-navorski-profile-get profile :program-args))
+           (init-script  (-navorski-profile-get profile :init-script))
            (term-buffer  (or (and (aget profile :unique)
                                   (get-buffer buffer-name))
                              (if program-args
@@ -233,13 +233,35 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun -navorski-profile-get (profile key)
+  (let ((result (aget profile key )))
+    (if (equal result key)
+        nil
+      result)))
+
+(defun -navorski-profile-set (profile0 key val)
+  (let* ((profile (copy-alist profile0))
+         (pair (assoc key profile)))
+    (if pair
+        (progn
+          (setf (cdr pair) val)
+          profile)
+      (append profile `((,key . ,val))))))
+
+(defun -navorski-profile-modify (profile key f)
+  (-navorski-profile-set
+   profile
+   key
+   (funcall f (-navorski-profile-get profile key))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; derived from http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/
 ;; stolen from http://github.com/tavisrudd/emacs.d
-(defun -navorski-setup-tramp-string (&optional remote-host)
+(defun -navorski-remote-term-setup-tramp-string (&optional remote-host)
   "Setup ansi-term/tramp remote directory tracking
    NOTE:  this appears to have some sort of timing bug in it and doesn't always work"
-  (concat "\n
+  (concat "
 function eterm_set_variables {\n"
 "local emacs_host=\"" (car (split-string (system-name) "\\.")) "\"\n"
 (if remote-host
@@ -277,36 +299,64 @@ function eterm_set_variables {\n"
 "clear\n"
 "echo \"tramp initialized\""))
 
+
 (defun -navorski-get-ssh-host (profile)
   (let ((user-host (split-string (aget profile :remote-host) "@")))
     (if (= (length user-host) 1)
         (car user-host)
       (nth 1 user-host))))
 
+(defun -navorski-remote-term-setup-program-args (profile)
+  (let ((remote-host (-navorski-profile-get profile :remote-host))
+        (remote-port (-navorski-profile-get profile :remote-port))
+        (remote-program-args (-navorski-profile-get profile :program-args))
+        (remote-program-path (-navorski-get-shell-path profile)))
+    (-navorski-profile-modify
+     profile
+     :program-args
+     (lambda (args)
+       (append (list "-t")
+               (when remote-port
+                 (list "-p" remote-port))
+               (list remote-host)
+               (list remote-program-path)
+               remote-program-args)))))
+
+(defun -navorski-remote-term-setup-tramp (profile)
+  (let ((use-tramp (-navorski-profile-get profile :use-tramp)))
+    (if use-tramp
+        (-navorski-profile-modify
+         profile
+         :init-script
+         (lambda (val)
+           (append val (list (-navorski-remote-term-setup-tramp-string profile)))))
+      profile)))
+
+(defun -navorski-remote-term-setup-remote-host (profile)
+  (-navorski-profile-modify
+   profile
+   :remote-host
+   (lambda (remote-host)
+     (or remote-host
+         (read-from-minibuffer
+          "SSH address (e.g user@host): " nil nil nil
+          'nav/remote-term)))))
+
+(defun -navorski-remote-term-setup-buffer-name (profile)
+  (-navorski-profile-modify
+   profile
+   :buffer-name
+   (lambda (buffer-name)
+     (or buffer-name
+         "remote-terminal"))))
+
 (defun -navorski-remote-term-to-local-term (profile)
-  (let* ((remote-host (or (aget profile :remote-host)
-                          (read-from-minibuffer
-                           "SSH address (e.g user@host): " nil nil nil
-                           'nav/remote-term)))
-         (remote-program-path (-navorski-get-shell-path profile))
-         (local-program-args (append
-                              (list "-t")
-                              (and (aget profile :remote-port)
-                                   (list "-p"
-                                         (aget profile :remote-port)))
-                              (list remote-host
-                                    (format "%s" remote-program-path))
-                              (aget profile :program-args))))
-
-    (-navorski-merge-alist
-     (-navorski-add-to-init-script profile (-navorski-setup-tramp-string
-                                            (-navorski-get-ssh-host profile)))
-     `((:program-path . "ssh")
-       (:program-args . ,local-program-args)
-       (:remote-host  . ,remote-host)
-       (:buffer-name  . ,(or (aget profile :buffer-name)
-                             "remote-terminal"))))))
-
+  (-> profile
+    (-navorski-remote-term-setup-buffer-name)
+    (-navorski-remote-term-setup-remote-host)
+    (-navorski-remote-term-setup-program-args)
+    (-navorski-profile-set :program-path "ssh")
+    (-navorski-remote-term-setup-tramp)))
 
 (defun nav/remote-term (&optional remote-profile)
   "Creates a multi-term in a remote host. A user + host (e.g
@@ -317,30 +367,34 @@ user@host) value will be required to perform the connection."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun -navorski-persistent-term-to-local-term (profile)
-  (let* ((screen-session-name (or (aget profile :screen-session-name)
-                                  (read-from-minibuffer "GNU Screen session name: "
-                                                        nil nil nil
-                                                        'nav/persistent-term)))
-         (screen-arguments (aget profile :screen-args))
-         (original-program-path (-navorski-get-shell-path
-                                 (aget profile :program-path)))
-         (buffer-name (or (aget profile :buffer-name)
-                          screen-session-name))
-         (program-args (append
-                        (list "-x" "-R"
-                              "-S" screen-session-name
-                              "-s" original-program-path)
-                        screen-arguments)))
-    (-navorski-merge-alist
-     profile
-     `((:screen-session-name . ,screen-session-name)
-       (:program-path . "screen")
-       (:buffer-name  . ,buffer-name)
-       (:program-args . ,program-args)
-       (:buffer-name  . ,(or (aget profile :buffer-name)
-                             "remote-terminal"))))))
+(defun -navorski-persistent-term-setup-session-name (profile)
+  (-navorski-profile-modify
+   profile
+   :screen-session-name
+   (lambda (session-name)
+     (or session-name
+         (read-from-minibuffer "GNU Screen session name: "
+                               nil nil nil
+                               'nav/persistent-term)))))
 
+(defun -navorski-persistent-term-setup-program-args (profile)
+  (let ((inner-program-path (-navorski-get-shell-path profile))
+        (inner-program-args (-navorski-profile-get profile :program-args))
+        (screen-name (-navorski-profile-get profile :screen-session-name))
+        (screen-args (-navorski-profile-get profile :screen-args)))
+    (when inner-program-args
+      (message "navorski: can't have arguments for commands on GNU screen sessions"))
+    (-navorski-profile-set
+     profile
+     :program-args
+     (append (list "-x" "-R" "-S" screen-name "-s" inner-program-path)
+             screen-args))))
+
+(defun -navorski-persistent-term-to-local-term (profile)
+  (-> profile
+    (-navorski-persistent-term-setup-session-name)
+    (-navorski-persistent-term-setup-program-args)
+    (-navorski-profile-set :program-path "screen")))
 
 (defun nav/persistent-term (&optional profile)
   "Creates a multi-term inside a GNU screen session. A screen
@@ -362,18 +416,6 @@ a GNU screen session name."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun -navorski-get-init-script (profile)
-  (let ((init-script (aget profile :init-script)))
-    (cond
-     ((and init-script
-           (listp init-script)) init-script)
-     (init-script (list init-script))
-     (t '()))))
-
-(defun -navorski-add-to-init-script (profile cmd)
-  (let ((init-script (append (list cmd) (-navorski-get-init-script profile))))
-    (-navorski-merge-alist profile `((:init-script . ,init-script)))))
 
 ;; DO NOT USE THIS FUNCTION - Use -navorski-get-terminal instead
 (defun -navorski-profile-create-terminal (profile)
@@ -412,6 +454,38 @@ a GNU screen session name."
 
 (defun -navorski-profile-send-region (profile start end)
   (-navorski-profile-send-string profile (buffer-substring start end)))
+
+(defmacro -navorski-defterminal (profile-name profile)
+  `(progn
+     (define-minor-mode ,(intern (format "%s-terminal-mode" profile-name))
+       ,(format "Minor mode for navorski terminal `%s'." profile-name)
+       nil
+       :group `,(intern "%s-navorski-terminal" profile-name)
+       :keymap (make-sparse-keymap))
+
+     (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
+       (interactive)
+       (-navorski-profile-get-buffer ',profile))
+
+     ;; nav/<profile-name>-pop-to-buffer
+     (defun ,(intern (format "nav/%s-pop-to-buffer" profile-name)) ()
+       (interactive)
+       (-navorski-profile-pop-to-buffer ',profile))
+
+     ;; nav/<profile-name>-send-region
+     (defun ,(intern (format "nav/%s-send-region" profile-name)) (start end)
+       (interactive "r")
+       (-navorski-profile-send-region ',profile start end))
+
+     ;; nav/<profile-name>-send-string
+     (defun ,(intern (format "nav/%s-send-string" profile-name)) (raw-str)
+       (interactive ,(format "sSend to %s: " profile-name))
+       (-navorski-profile-send-string ',profile raw-str))
+
+     ;; nav/<profile-name>-kill-buffer
+     (defun ,(intern (format "nav/%s-kill-buffer" profile-name)) (&optional kill-process)
+       (interactive)
+       (-navorski-profile-kill-buffer ',profile kill-process))))
 
 (defmacro nav/defterminal (profile-name &rest args)
   "Creates a unique terminal with specified settings.
@@ -510,37 +584,7 @@ a GNU screen session name."
 
   (let* ((profile (-map (lambda (it) `(,(nth 0 it) . ,(nth 1 it)))
                         (-partition 2 (append args (list :unique t))))))
-
-    `(progn
-       (define-minor-mode ,(intern (format "%s-terminal-mode" profile-name))
-         ,(format "Minor mode for navorski terminal `%s'." profile-name)
-         nil
-         :group `,(intern "%s-navorski-terminal" profile-name)
-         :keymap (make-sparse-keymap))
-
-       (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
-         (interactive)
-         (-navorski-profile-get-buffer ',profile))
-
-       ;; nav/<profile-name>-pop-to-buffer
-       (defun ,(intern (format "nav/%s-pop-to-buffer" profile-name)) ()
-         (interactive)
-         (-navorski-profile-pop-to-buffer ',profile))
-
-       ;; nav/<profile-name>-send-region
-       (defun ,(intern (format "nav/%s-send-region" profile-name)) (start end)
-         (interactive "r")
-         (-navorski-profile-send-region ',profile start end))
-
-       ;; nav/<profile-name>-send-string
-       (defun ,(intern (format "nav/%s-send-string" profile-name)) (raw-str)
-         (interactive ,(format "sSend to %s: " profile-name))
-         (-navorski-profile-send-string ',profile raw-str))
-
-       ;; nav/<profile-name>-kill-buffer
-       (defun ,(intern (format "nav/%s-kill-buffer" profile-name)) (&optional kill-process)
-         (interactive)
-         (-navorski-profile-kill-buffer ',profile kill-process)))))
+    `(-navorski-defterminal ,profile-name ,profile)))
 
 (put 'nav/defterminal 'lisp-indent-function 'defun)
 
