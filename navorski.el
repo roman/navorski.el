@@ -152,6 +152,7 @@
 
 (defun -navorski-get-shell-path (profile)
   (or (-navorski-profile-get profile :program-path)
+      multi-term-program
       (getenv "SHELL")
       (getenv "ESHELL")
       "/bin/sh"))
