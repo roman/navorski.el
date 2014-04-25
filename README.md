@@ -39,8 +39,6 @@ and call the generated `pop-to-buffer` function.
   :setup-tramp nil
   :init-script ("cd project-path" "bundle exec rails c")
 
-;; NOTE: the newline in the init-script is important
-
 ;; M-x: (nav/rails-console-production-pop-to-buffer)
 ;; will open a new buffer to a production rails console
 
