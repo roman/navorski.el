@@ -532,11 +532,11 @@ a GNU screen session name."
      - :buffer-name (string)
 
      The name of the terminal buffer (without surrounding
-     *earmufs*)
+     *earmufs*), defaults to profile-name if not set.
 
      - :remote-host (string)
 
-     An SSH address to connect to.
+     An SSH address to connect to. (e.g user@host.com)
 
      - :remote-port (string)
 
@@ -546,18 +546,19 @@ a GNU screen session name."
 
      A program that you want to execute (instead of /bin/bash)
 
-     - :program-args (string)
+     - :program-args (string, list[string])
 
-     Program arguments to provide to program NOTE: doesn't work
-     on persistent sessions.
+     Program arguments to provide to program
+     IMPORTANT: this setting doesn't work on persistent sessions.
 
      - :screen-session-name (string)
 
      GNU screen session to use for this terminal.
 
-     - :init-script (string)
+     - :init-script (string, list[string])
 
-     Sends an initial string to the terminal.
+     Sends an initial string to the terminal. If a list of strings is specified
+     it will execute each of the lines one at a time.
 
      - :use-tramp (bool)
 
@@ -566,8 +567,8 @@ a GNU screen session name."
      - :modify-default-directory (fn)
 
      Receives the current default-directory and allows you to modify it
-     in any way, the result is going to be the default-directory that
-     will be used when creating the terminal process
+     in any way, the result must be the `default-directory` value that
+     will be used when creating the terminal process.
 
   This macro will generate:
 
@@ -614,7 +615,7 @@ a GNU screen session name."
   ;;;
 
   (nav/defterminal root-production
-    :remote-host root@production-site.com
+    :remote-host \"root@production-site.com\"
     :screen-session \"root\"
     :use-tramp t)
 
