@@ -5,7 +5,7 @@ terminals (local or remote).
 
 ## Emacs version
 
-This extension has been tested with emacs 24.1.1 on Mac OS X Lion
+This extension has been tested with emacs 24.3.1 on Mac OS X Lion/Mavericks
 and Gentoo.
 
 ## Dependencies
@@ -60,7 +60,7 @@ available options.
 
 Viktor Navorski is a fictional character from the movie [The
 Terminal](http://en.wikipedia.org/wiki/The_Terminal), that _lived_ in
-the terminal. Got the pun right?
+a terminal. Got the pun right?
 
 ## License
 
