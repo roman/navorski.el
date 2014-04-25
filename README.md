@@ -62,6 +62,7 @@ a terminal. Got the pun right?
 
 ## License
 
+```
  navorski.el - Making you live in the terminal
 
  Copyright (C) 2014  Roman Gonzalez
@@ -79,3 +80,4 @@ a terminal. Got the pun right?
 
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ```
