@@ -201,16 +201,13 @@
                                    (funcall ',current-sentinel proc change))
                                (funcall ',current-sentinel proc change))))))
 
-(defun -navorski-get-buffer (profile)
-  "Get term buffer."
+(defun -navorski-create-term-buffer (profile)
   (with-temp-buffer
     (let* ((shell-name   (-navorski-get-shell-path profile))
            (buffer-name  (-navorski-get-buffer-name profile))
            (program-args (-navorski-profile-get profile :program-args))
            (init-script  (-navorski-profile-get profile :init-script))
-           (term-buffer  (or (and (aget profile :unique)
-                                  (get-buffer buffer-name))
-                             (if program-args
+           (term-buffer  (or (if program-args
                                  (apply #'make-term
                                         buffer-name shell-name nil program-args)
                                (make-term buffer-name shell-name)))))
@@ -220,11 +217,22 @@
                  (or (and program-args
                           (mapconcat 'identity program-args " "))
                      "")))
+
       (with-current-buffer term-buffer
         (multi-term-internal)
         (-navorski-decorate-multi-term-sentinel profile term-buffer)
         (-map (lambda (s) (term-send-raw-string (concat s "\n")))
               init-script))
+
+      term-buffer)))
+
+(defun -navorski-get-buffer (profile)
+  "Get term buffer."
+  (with-temp-buffer
+    (let* ((buffer-name  (-navorski-get-buffer-name profile))
+           (term-buffer  (or (and (aget profile :unique)
+                                  (get-buffer buffer-name))
+                             (-navorski-create-term-buffer profile))))
       (switch-to-buffer term-buffer)
       term-buffer)))
 
