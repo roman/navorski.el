@@ -37,7 +37,7 @@ and call the generated `pop-to-buffer` function.
   :screen-session-name "production_console"
   :remote-host "user@production"
   :setup-tramp nil
-  :init-script "cd project-path && bundle exec rails c\n")
+  :init-script ("cd project-path" "bundle exec rails c")
 
 ;; NOTE: the newline in the init-script is important
 
@@ -45,15 +45,15 @@ and call the generated `pop-to-buffer` function.
 ;; will open a new buffer to a production rails console
 
 (nav/defterminal ipython
-  :buffer-name "dev-console"
+  :buffer-name "ipython-console"
   :proccess-path "/usr/bin/ipython")
 
 ;; M-x: (nav/ipython-pop-to-buffer)
 ;; will open a new buffer to a local ipython session.
 ```
 
-navorski.el will use an SSH connection when a :remote-host option
-is provided, check out the function documentation for all possible
-options.
+navorski.el will use an SSH connection when a :remote-host option is
+provided, check out the documentation of `nav/defterminal` for all
+available options.
 
 ## License
