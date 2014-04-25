@@ -215,7 +215,7 @@
                           `(lambda (proc change)
                              (if (string-match "exited abnormally with code \\([0-9]+\\)" change)
                                  (if (string-equal (match-string 1 change) "126")
-                                     (message "navorski: %s" change)
+                                     (message "[navorski] INFO: %s" change)
                                    (funcall ',current-sentinel proc change))
                                (funcall ',current-sentinel proc change))))))
 
@@ -230,7 +230,8 @@
                                         buffer-name shell-name nil program-args)
                                (make-term buffer-name shell-name)))))
       (when navorski-verbose
-        (message "navorski executing: %s %s"
+        (message
+         (format "[navorski] EXECUTE: %s %s on DIRECTORY=%s"
                  shell-name
                  (or (and program-args
                           (mapconcat 'identity program-args " "))
@@ -412,7 +413,7 @@ user@host) value will be required to perform the connection."
         (screen-name (-navorski-profile-get profile :screen-session-name))
         (screen-args (-navorski-profile-get profile :screen-args)))
     (when inner-program-args
-      (message "navorski: can't have arguments for commands on GNU screen sessions"))
+      (message "[navorski] ERROR: can't have arguments for commands on GNU screen sessions"))
     (-navorski-profile-set
      profile
      :program-args
