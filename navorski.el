@@ -183,12 +183,30 @@
 (defun -navorski-get-buffer-name (profile)
   (let ((buffer-name (format "%s"
                              (or (aget profile :buffer-name)
-                                 (aget profile :profile-name)))))
+                                 (aget profile :profile-name)
+                                 "terminal"))))
     (if (aget profile :unique)
         buffer-name
       (-navorski-next-buffer-name buffer-name))))
 
+(defun -navorski-get-default-directory (profile)
+  (let ((f (or (-navorski-profile-get profile :modify-default-directory)
+               'identity)))
+    (funcall f default-directory)))
 
+(defun -navorski-profile-setting-to-list (setting)
+  (and setting
+       (if (listp setting)
+           setting
+         (list setting))))
+
+(defun -navorski-get-init-script (profile)
+  (-navorski-profile-setting-to-list
+   (-navorski-profile-get profile :init-script)))
+
+(defun -navorski-get-program-args (profile)
+  (-navorski-profile-setting-to-list
+   (-navorski-profile-get profile :program-args)))
 
 (defun -navorski-decorate-multi-term-sentinel (profile term-buffer)
   (let* ((term-process (get-buffer-process term-buffer))
