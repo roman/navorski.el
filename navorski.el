@@ -499,6 +499,7 @@ a GNU screen session name."
        :group `,(intern "%s-navorski-terminal" profile-name)
        :keymap (make-sparse-keymap))
 
+     ;; nav/<profile-name>-get-buffer
      (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
        (interactive)
        (-navorski-profile-get-buffer ',profile))
