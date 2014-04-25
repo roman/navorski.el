@@ -221,10 +221,13 @@
 
 (defun -navorski-create-term-buffer (profile)
   (with-temp-buffer
-    (let* ((shell-name   (-navorski-get-shell-path profile))
+    (let* ((default-directory (-navorski-get-default-directory profile))
+
+           (shell-name   (-navorski-get-shell-path profile))
            (buffer-name  (-navorski-get-buffer-name profile))
-           (program-args (-navorski-profile-get profile :program-args))
-           (init-script  (-navorski-profile-get profile :init-script))
+           (program-args (-navorski-get-program-args profile))
+           (init-script  (-navorski-get-init-script profile))
+
            (term-buffer  (or (if program-args
                                  (apply #'make-term
                                         buffer-name shell-name nil program-args)
@@ -235,14 +238,17 @@
                  shell-name
                  (or (and program-args
                           (mapconcat 'identity program-args " "))
-                     "")))
+                     "")
+                 default-directory)))
 
       (with-current-buffer term-buffer
         (multi-term-internal)
         (-navorski-decorate-multi-term-sentinel profile term-buffer)
-        (-map (lambda (s) (term-send-raw-string (concat s "\n")))
-              init-script))
-
+        (when init-script
+          (-map (lambda (s) (term-send-raw-string (concat s "\n")))
+                (if (listp init-script)
+                    init-script
+                  (list init-script)))))
       term-buffer)))
 
 (defun -navorski-get-buffer (profile)
@@ -447,7 +453,7 @@ a GNU screen session name."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; DO NOT USE THIS FUNCTION - Use -navorski-get-terminal instead
+;; *DO NOT USE THIS FUNCTION DIRECTLY* - Use -navorski-get-terminal instead
 (defun -navorski-profile-create-terminal (profile)
   (cond
    ((and (aget profile :remote-host)
@@ -555,6 +561,12 @@ a GNU screen session name."
      - :use-tramp (bool)
 
      Enables tramp integration.
+
+     - :modify-default-directory (fn)
+
+     Receives the current default-directory and allows you to modify it
+     in any way, the result is going to be the default-directory that
+     will be used when creating the terminal process
 
   This macro will generate:
 
