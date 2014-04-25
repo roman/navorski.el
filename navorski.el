@@ -183,7 +183,7 @@
 (defun -navorski-get-buffer-name (profile)
   (let ((buffer-name (format "%s"
                              (or (aget profile :buffer-name)
-                                 "terminal"))))
+                                 (aget profile :profile-name)))))
     (if (aget profile :unique)
         buffer-name
       (-navorski-next-buffer-name buffer-name))))
@@ -586,7 +586,7 @@ a GNU screen session name."
   nav/root-production-send-region"
 
   (let* ((profile (-map (lambda (it) `(,(nth 0 it) . ,(nth 1 it)))
-                        (-partition 2 (append args (list :unique t))))))
+                        (-partition 2 (append args (list :unique t :profile-name `,profile-name))))))
     `(-navorski-defterminal ,profile-name ,profile)))
 
 (put 'nav/defterminal 'lisp-indent-function 'defun)
