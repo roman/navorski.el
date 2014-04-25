@@ -1,8 +1,10 @@
 ;;; navorski.el --- Helping you live in the terminal, like Viktor did.
 
-;; Copyright (C) 2013 Birdseye Software.
+;; Copyright (C) 2013, 2014 Roman Gonzalez .
+;; Copyright (C) 2013 Birdseye Software, Inc.
 
-;; Author: Roman Gonzalez <roman@birdseye-sw.com>, Tavis Rudd <tavis@birdseye-sw.com>
+;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
+;; Mantainer: Roman Gonzalez <romanandreg@gmail.com>
 ;; Version: 0.1.0
 ;; Keywords: terminal
 
