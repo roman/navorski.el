@@ -6,6 +6,7 @@
 ;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
 ;; Mantainer: Roman Gonzalez <romanandreg@gmail.com>
 ;; Version: 0.1.0
+;; Package-Requires: ((dash "1.5.0") (multi-term "0.8.14"))
 ;; Keywords: terminal
 
 ;; This file is not part of GNU Emacs.
