@@ -7,9 +7,6 @@
                   '((:hello . "world"))
                   '((:hello . "mundo"))))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (ert-deftest navorski-profile-set ()
   (should (equal
            '((:program-path . "ssh"))
@@ -30,7 +27,23 @@
                                        :hello
                                        (lambda (x) (+ x 1)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(ert-deftest navorski-get-buffer-name-with-nil ()
+  "should return the value of default-directory"
+  (let ((profile '()))
+    (should (equal default-directory (-navorski-get-default-directory profile))))
+  (let ((profile '((:cwd . nil))))
+    (should (equal default-directory (-navorski-get-default-directory profile)))))
+
+(ert-deftest navorski-get-buffer-name-with-value ()
+  "should return the given value"
+  (let ((profile '((:cwd . "foo"))))
+    (should (equal "foo" (-navorski-get-default-directory profile)))))
+
+(ert-deftest navorski-get-buffer-name-with-value ()
+  "should receive default-directory and return new value"
+  (let ((profile '((:cwd . (lambda (dir) (format "foo-%s" dir))))))
+    (should (equal (format "foo-%s" default-directory)
+                   (-navorski-get-default-directory profile)))))
 
 (ert-deftest navorski-remote-term-setup-program-args-test ()
   (should (equal
@@ -39,7 +52,6 @@
 
 (ert-deftest navorski-remote-term-setup-tramp ()
   (let* ((profile '((:use-tramp . nil))))
-    ;; WTF IS GOING ON.
     (should (null (-navorski-profile-get profile :use-tramp)))
     (should (equal
              '((:use-tramp . nil))
@@ -66,8 +78,6 @@
                (:program-path . "ssh"))
              output-profile))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (ert-deftest navorski-remote-term-setup-program-args-test ()
   (let ((profile '((:screen-session-name . "foo"))))
     (should (equal
@@ -82,8 +92,6 @@
                (:screen-args . ("-e^Tt"))
                (:program-args . ("-x" "-R" "-S" "foo" "-s" "/bin/bash" "-e^Tt")))
              (-navorski-persistent-term-setup-program-args profile)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (ert-deftest navorski-remote-term-to-local-term ()
   (let* ((profile '((:remote-host . "somehost")))
