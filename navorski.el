@@ -5,7 +5,7 @@
 
 ;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
 ;; Mantainer: Roman Gonzalez <romanandreg@gmail.com>
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((dash "1.5.0") (multi-term "0.8.14"))
 ;; Keywords: terminal
 
@@ -31,15 +31,27 @@
 
 ;;; Code:
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Variables
+
 (defcustom navorski-buffer-name "terminal"
   "Default buffer name for terminal."
-  :type 'string)
+  :type 'string
+  :group 'navorski)
 
 (defcustom navorski-verbose nil
   "Print debug information on message buffer"
-  :type 'bool)
+  :type 'bool
+  :group 'navorski)
+
+(defvar navorski-profile-map (make-hash-table :test 'equal)
+  "Collection of navorski profiles")
+
+(defvar navorski-read-only-term-map (suppress-keymap (make-sparse-keymap))
+  "Keymap for read-only term")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Keybindings for terminal buffers
 
 (defun -navorski-term-reverse-search ()
   (interactive)
@@ -143,6 +155,7 @@
         ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utils
 
 (defun -navorski-merge-alist (a1 a2)
   (let ((a1_ (copy-alist a1)))
@@ -153,6 +166,58 @@
           (setf (cdr r) (cdr x)))))
     a1_))
 
+(defun -navorski-profile-setting-to-list (setting)
+  (and setting
+       (if (listp setting)
+           setting
+         (list setting))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Profiles Manager functions
+
+(defun -navorski-put-profile (profile-name profile)
+  (puthash profile-name profile navorski-profile-map))
+
+(defun -navorski-get-profile (profile-name)
+  (gethash profile-name navorski-profile-map))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Profile accessors
+
+;;;;;;;;;; General
+
+(defun -navorski-profile-get (profile key &optional def)
+  (let ((result (aget profile key)))
+    (if (equal result key)
+        nil
+      result)))
+
+(defun -navorski-profile-set (profile0 key val)
+  (let* ((profile (copy-alist profile0))
+         (pair (assoc key profile)))
+    (if pair
+        (progn
+          (setf (cdr pair) val)
+          profile)
+      (append profile `((,key . ,val))))))
+
+(defun -navorski-profile-modify (profile key f)
+  (-navorski-profile-set
+   profile
+   key
+   (funcall f (-navorski-profile-get profile key))))
+
+;;;;;;;;;; Fields
+
+(defun -navorski-get-kill-buffer-on-stop (profile)
+  (-navorski-profile-get profile :kill-buffer-on-stop))
+
+(defun -navorski-get-profile-name (profile)
+  (-navorski-profile-get profile :profile-name))
+
+(defun -navorski-get-interactive (profile)
+  (-navorski-profile-get profile :interactive))
+
 (defun -navorski-get-shell-path (profile)
   (or (-navorski-profile-get profile :program-path)
       multi-term-program
@@ -160,8 +225,10 @@
       (getenv "ESHELL")
       "/bin/sh"))
 
-(defun -navorski-indexed-buffer-name (buffer-name &optional index)
-  (if index
+;;; start -navorski-get-buffer-name
+
+(defun -navorski-indexed-buffer-name (buffer-name &optional current-index)
+  (if current-index
       (format "%s<%s>"
               buffer-name
               current-index)
@@ -190,35 +257,63 @@
         buffer-name
       (-navorski-next-buffer-name buffer-name))))
 
+;;; end  -navorski-get-buffer-name
+
 (defun -navorski-get-default-directory (profile)
-  (let ((f (or (-navorski-profile-get profile :modify-default-directory)
+  (let ((f (or (-navorski-profile-get profile :cwd)
                'identity)))
     (funcall f default-directory)))
-
-(defun -navorski-profile-setting-to-list (setting)
-  (and setting
-       (if (listp setting)
-           setting
-         (list setting))))
 
 (defun -navorski-get-init-script (profile)
   (-navorski-profile-setting-to-list
    (-navorski-profile-get profile :init-script)))
 
+(defun -navorski-get-read-only (profile)
+  (-navorski-profile-get profile :read-only))
+
 (defun -navorski-get-program-args (profile)
   (-navorski-profile-setting-to-list
    (-navorski-profile-get profile :program-args)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Terminal buffer sentinels and filters
+
 (defun -navorski-decorate-multi-term-sentinel (profile term-buffer)
-  (let* ((term-process (get-buffer-process term-buffer))
+  (let* ((profile-name (-navorski-get-profile-name profile))
+         (kill-buffer-on-stop (-navorski-get-kill-buffer-on-stop profile))
+         (term-process (get-buffer-process term-buffer))
          (current-sentinel (process-sentinel term-process)))
     (set-process-sentinel term-process
                           `(lambda (proc change)
-                             (if (string-match "exited abnormally with code \\([0-9]+\\)" change)
-                                 (if (string-equal (match-string 1 change) "126")
-                                     (message "[navorski] INFO: %s" change)
-                                   (funcall ',current-sentinel proc change))
-                               (funcall ',current-sentinel proc change))))))
+                             ;; TODO: work out notifying when process is gone
+                             (let* ((inhebit-read-only t))
+                               (if (string-match "exited abnormally with code \\([0-9]+\\)" change)
+                                   (unless (string-equal (match-string 1 change) "0")
+                                     (message "[navorski:%s] INFO - %s" ',profile-name change)
+                                     (when ',kill-buffer-on-stop
+                                       (funcall ',current-sentinel proc change)))
+                                 (when ',kill-buffer-on-stop
+                                   (funcall ',current-sentinel proc change))))))))
+
+(defun -navorski-decorate-multi-term-process-filter (profile term-buffer)
+  (let* ((profile-name (-navorski-get-profile-name profile))
+         (read-only (-navorski-get-read-only profile))
+         (term-process (get-buffer-process term-buffer))
+         (current-filter (process-filter term-process)))
+    (set-process-filter term-process
+                        `(lambda (proc str)
+                           (with-current-buffer ',term-buffer
+                             (setq buffer-read-only nil))
+                           (funcall ',current-filter proc str)
+                           (with-current-buffer ',term-buffer
+                             (setq buffer-read-only ',read-only))))))
+
+
+(defun -navorski-read-only-term-mode ()
+  (multi-term-internal)
+  (buffer-disable-undo)
+  (use-local-map navorski-read-only-term-map)
+  (setq buffer-read-only t))
 
 (defun -navorski-create-term-buffer (profile)
   (with-temp-buffer
@@ -227,6 +322,8 @@
            (shell-name   (-navorski-get-shell-path profile))
            (buffer-name  (-navorski-get-buffer-name profile))
            (program-args (-navorski-get-program-args profile))
+           (read-only (-navorski-get-read-only profile))
+
            (init-script  (-navorski-get-init-script profile))
 
            (term-buffer  (or (if program-args
@@ -243,13 +340,16 @@
                  default-directory)))
 
       (with-current-buffer term-buffer
-        (multi-term-internal)
+        (if read-only
+            (-navorski-read-only-term-mode)
+          (multi-term-internal))
         (-navorski-decorate-multi-term-sentinel profile term-buffer)
+        (-navorski-decorate-multi-term-process-filter profile term-buffer)
+
         (when init-script
           (-map (lambda (s) (term-send-raw-string (concat s "\n")))
-                (if (listp init-script)
-                    init-script
-                  (list init-script)))))
+                init-script)))
+
       term-buffer)))
 
 (defun -navorski-get-buffer (profile)
@@ -263,35 +363,7 @@
       term-buffer)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun nav/term (&optional profile)
-  (interactive)
-  (-navorski-get-buffer profile))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun -navorski-profile-get (profile key)
-  (let ((result (aget profile key )))
-    (if (equal result key)
-        nil
-      result)))
-
-(defun -navorski-profile-set (profile0 key val)
-  (let* ((profile (copy-alist profile0))
-         (pair (assoc key profile)))
-    (if pair
-        (progn
-          (setf (cdr pair) val)
-          profile)
-      (append profile `((,key . ,val))))))
-
-(defun -navorski-profile-modify (profile key f)
-  (-navorski-profile-set
-   profile
-   key
-   (funcall f (-navorski-profile-get profile key))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tramp configuration code
 
 ;; derived from http://www.enigmacurry.com/2008/12/26/emacs-ansi-term-tricks/
 ;; stolen from http://github.com/tavisrudd/emacs.d
@@ -336,12 +408,11 @@ function eterm_set_variables {\n"
 "clear\n"
 "echo \"tramp initialized\""))
 
-
-(defun -navorski-get-ssh-host (profile)
-  (let ((user-host (split-string (aget profile :remote-host) "@")))
-    (if (= (length user-host) 1)
-        (car user-host)
-      (nth 1 user-host))))
+;; (defun -navorski-get-ssh-host (profile)
+;;   (let ((user-host (split-string (aget profile :remote-host) "@")))
+;;     (if (= (length user-host) 1)
+;;         (car user-host)
+;;       (nth 1 user-host))))
 
 (defun -navorski-remote-term-setup-program-args (profile)
   (let ((remote-host (-navorski-profile-get profile :remote-host))
@@ -395,14 +466,8 @@ function eterm_set_variables {\n"
     (-navorski-profile-set :program-path "ssh")
     (-navorski-remote-term-setup-tramp)))
 
-(defun nav/remote-term (&optional remote-profile)
-  "Creates a multi-term in a remote host. A user + host (e.g
-user@host) value will be required to perform the connection."
-  (interactive)
-  (-navorski-get-buffer
-   (-navorski-remote-term-to-local-term remote-profile)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GNU Screen configuration code
 
 (defun -navorski-persistent-term-setup-session-name (profile)
   (-navorski-profile-modify
@@ -433,97 +498,63 @@ user@host) value will be required to perform the connection."
     (-navorski-persistent-term-setup-program-args)
     (-navorski-profile-set :program-path "screen")))
 
-(defun nav/persistent-term (&optional profile)
-  "Creates a multi-term inside a GNU screen session. A screen
-session name is required."
-  (interactive)
-  (-navorski-get-buffer
-   (-navorski-persistent-term-to-local-term profile)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions to use with a navorski profile
 
-(defun nav/remote-persistent-term (&optional profile)
-  "Creates multi-term buffer on a GNU screen session in a remote
-host. A user + host (e.g user@host) value is required as well as
-a GNU screen session name."
-  (interactive)
-  (-navorski-get-buffer
-   (-navorski-remote-term-to-local-term
-    (-navorski-persistent-term-to-local-term profile))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; *DO NOT USE THIS FUNCTION DIRECTLY* - Use -navorski-get-terminal instead
-(defun -navorski-profile-create-terminal (profile)
-  (cond
-   ((and (aget profile :remote-host)
-         (aget profile :screen-session-name))
-    (nav/remote-persistent-term profile))
-   ((aget profile :remote-host)
-    (nav/remote-term profile))
-   ((aget profile :screen-session-name)
-    (nav/persistent-term profile))
-   (t (nav/term profile))))
-
-(defun -navorski-profile-get-buffer (profile)
-  (let ((term-buffer (get-buffer
-                      (format "*%s*"
-                              (aget profile :buffer-name)))))
-    (save-window-excursion
-      (if (not term-buffer)
-          (-navorski-profile-create-terminal profile)
-        term-buffer))))
-
-(defun -navorski-profile-pop-to-buffer (profile)
+(defun nav/pop-to-buffer (profile)
   (pop-to-buffer (-navorski-profile-get-buffer profile)))
 
-(defun -navorski-profile-kill-buffer (profile &optional kill-process)
+(defun nav/kill-buffer (profile &optional kill-process)
   (let ((term-buffer (-navorski-profile-get-buffer profile)))
     (when kill-process
-      (process-kill-without-query
-       (get-buffer-process term-buffer)))
+      (set-process-query-on-exit-flag (get-buffer-process term-buffer) nil)
+      (get-buffer-process term-buffer))
     (kill-buffer term-buffer)))
 
-(defun -navorski-profile-send-string (profile str)
+(defun nav/send-string (profile str)
   (with-current-buffer (-navorski-profile-get-buffer profile)
-    (term-send-raw-string (concat str "\n"))))
+    (let ((inhibit-read-only t))
+         (term-send-raw-string (concat str "\n")))))
 
-(defun -navorski-profile-send-region (profile start end)
-  (-navorski-profile-send-string profile (buffer-substring start end)))
+(defun nav/send-region (profile start end)
+  (nav/send-string profile (buffer-substring start end)))
 
-(defmacro -navorski-defterminal (profile-name profile)
-  `(progn
-     (define-minor-mode ,(intern (format "%s-terminal-mode" profile-name))
-       ,(format "Minor mode for navorski terminal `%s'." profile-name)
-       nil
-       :group `,(intern "%s-navorski-terminal" profile-name)
-       :keymap (make-sparse-keymap))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Macros
 
-     ;; nav/<profile-name>-get-buffer
-     (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
-       (interactive)
-       (-navorski-profile-get-buffer ',profile))
+(defmacro -navorski-def-interactive (profile-name profile)
+  (when (-navorski-get-interactive profile)
+    `(progn
+       (define-minor-mode ,(intern (format "%s-terminal-mode" profile-name))
+         ,(format "Minor mode for navorski terminal `%s'." profile-name)
+         nil
+         :group `,(intern "%s-navorski-terminal" profile-name)
+         :keymap (make-sparse-keymap))
 
-     ;; nav/<profile-name>-pop-to-buffer
-     (defun ,(intern (format "nav/%s-pop-to-buffer" profile-name)) ()
-       (interactive)
-       (-navorski-profile-pop-to-buffer ',profile))
+       ;; nav/<profile-name>-get-buffer
+       (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
+         (interactive)
+         (-navorski-profile-get-buffer ',profile))
 
-     ;; nav/<profile-name>-send-region
-     (defun ,(intern (format "nav/%s-send-region" profile-name)) (start end)
-       (interactive "r")
-       (-navorski-profile-send-region ',profile start end))
+       ;; nav/<profile-name>-pop-to-buffer
+       (defun ,(intern (format "nav/%s-pop-to-buffer" profile-name)) ()
+         (interactive)
+         (nav/pop-to-buffer ',profile))
 
-     ;; nav/<profile-name>-send-string
-     (defun ,(intern (format "nav/%s-send-string" profile-name)) (raw-str)
-       (interactive ,(format "sSend to %s: " profile-name))
-       (-navorski-profile-send-string ',profile raw-str))
+       ;; nav/<profile-name>-send-region
+       (defun ,(intern (format "nav/%s-send-region" profile-name)) (start end)
+         (interactive "r")
+         (nav/send-region ',profile start end))
 
-     ;; nav/<profile-name>-kill-buffer
-     (defun ,(intern (format "nav/%s-kill-buffer" profile-name)) (&optional kill-process)
-       (interactive)
-       (-navorski-profile-kill-buffer ',profile kill-process))))
+       ;; nav/<profile-name>-send-string
+       (defun ,(intern (format "nav/%s-send-string" profile-name)) (raw-str)
+         (interactive ,(format "sSend to %s: " profile-name))
+         (nav/send-string ',profile raw-str))
+
+       ;; nav/<profile-name>-kill-buffer
+       (defun ,(intern (format "nav/%s-kill-buffer" profile-name)) ()
+         (interactive)
+         (nav/kill-buffer ',profile t)))))
 
 (defmacro nav/defterminal (profile-name &rest args)
   "Creates a unique terminal with specified settings.
@@ -565,45 +596,56 @@ a GNU screen session name."
 
      Enables tramp integration.
 
-     - :modify-default-directory (fn)
+     - :read-only (bool)
+
+     Specifies if the terminal is read-only (only the output of
+     the process is printed on the buffer). This is particularly
+     usefull when using an specific program different than a
+     shell (e.g an http server, a test suite runner, etc)
+
+     - :cwd (fn)
 
      Receives the current default-directory and allows you to modify it
      in any way, the result must be the `default-directory` value that
      will be used when creating the terminal process.
 
-  This macro will generate:
+     - :interactive (bool)
 
-     - a minor mode called <profile-name>-terminal-mode
+     When t generates utility interactive functions associated to this
+     terminal profile, the functions it generates are:
 
-     - nav/<profile-name>-get-buffer
+       * a minor mode called <profile-name>-terminal-mode
 
-       Creates a terminal buffer and returns it.
+       * nav/<profile-name>-get-buffer
 
-     - nav/<profile-name>-pop-to-buffer
+         Creates a terminal buffer and returns it.
 
-       Pops the terminal buffer (creates it in case is not existing
-       via <profile-name>-create-buffer).
+       * nav/<profile-name>-pop-to-buffer
 
-     - nav/<profile-name>-send-string
+         Pops the terminal buffer (creates it in case is not existing
+         via <profile-name>-create-buffer).
 
-       Sends a raw string to the terminal buffer, in case it
-       exists, otherwise does nothing
+       * nav/<profile-name>-send-string
 
-     - nav/<profile-name>-send-region
+         Sends a raw string to the terminal buffer, in case it
+         exists, otherwise does nothing
 
-       Sends a region to the terminal buffer, in case it
-       exists, otherwise does nothing
+       * nav/<profile-name>-send-region
 
-     - nav/<profile-name>-kill-buffer
+         Sends a region to the terminal buffer, in case it
+         exists, otherwise does nothing
 
-       Kills the buffer for this terminal, in case it exists,
-       otherwise does nothing.
+       * nav/<profile-name>-kill-buffer
+
+         Kills the buffer for this terminal, in case it exists,
+         otherwise does nothing.
 
   Examples:
 
   (nav/defterminal remote-irb
     :remote-host vagrant@33.33.33.10
     :program-path \"/usr/local/bin/irb\"
+    :interactive t
     :screen-session-name \"irb\"
     :use-tramp nil)
 
@@ -618,6 +660,7 @@ a GNU screen session name."
   (nav/defterminal root-production
     :remote-host \"root@production-site.com\"
     :screen-session \"root\"
+    :interactive t
     :use-tramp t)
 
   Generates:
@@ -627,11 +670,59 @@ a GNU screen session name."
   nav/root-production-send-string
   nav/root-production-send-region"
 
-  (let* ((profile (-map (lambda (it) `(,(nth 0 it) . ,(nth 1 it)))
-                        (-partition 2 (append args (list :unique t :profile-name `,profile-name))))))
-    `(-navorski-defterminal ,profile-name ,profile)))
+  (let* ((profile0 (-map (lambda (it) `(,(nth 0 it) . ,(nth 1 it)))
+                         (-partition 2 (append (list :profile-name `,profile-name) args))))
+         (profile (-navorski-merge-alist
+                   '((:unique . t)
+                     (:interactive . nil)
+                     (:read-only . nil)
+                     (:kill-buffer-on-stop . t))
+                   profile0)))
+    `(progn
+       (setq ,profile-name ',profile)
+       (-navorski-put-profile ',profile-name ',profile)
+       (-navorski-def-interactive ,profile-name ,profile))))
 
 (put 'nav/defterminal 'lisp-indent-function 'defun)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Main functions
+
+(defun nav/term (&optional profile)
+  "Creates a multi-term on current directory"
+  (interactive)
+  (-navorski-get-buffer (-navorski-merge-alist '(:kill-buffer-on-stop . t) profile)))
+
+(defun nav/remote-term (&optional remote-profile)
+  "Creates a multi-term in a remote host. A user + host (e.g
+user@host) value will be required to perform the connection."
+  (interactive)
+  (-navorski-get-buffer
+   (-navorski-remote-term-to-local-term remote-profile)))
+
+(defun nav/persistent-term (&optional profile)
+  "Creates a multi-term inside a GNU screen session. A screen
+session name is required."
+  (interactive)
+  (-navorski-get-buffer
+   (-navorski-persistent-term-to-local-term profile)))
+
+(defun nav/remote-persistent-term (&optional profile)
+  "Creates multi-term buffer on a GNU screen session in a remote
+host. A user + host (e.g user@host) value is required as well as
+a GNU screen session name."
+  (interactive)
+  (-navorski-get-buffer
+   (-navorski-remote-term-to-local-term
+    (-navorski-persistent-term-to-local-term profile))))
+
+(defun nav/setup-tramp ()
+  "Setups tramp on a remote terminal"
+  (interactive)
+  (term-send-raw-string
+   (concat
+    (-navorski-remote-term-setup-tramp-string)
+    "\n")))
 
 ;; End:
 (provide 'navorski)
