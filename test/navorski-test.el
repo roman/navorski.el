@@ -7,9 +7,6 @@
                   '((:hello . "world"))
                   '((:hello . "mundo"))))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (ert-deftest navorski-profile-set ()
   (should (equal
            '((:program-path . "ssh"))
@@ -30,8 +27,6 @@
                                        :hello
                                        (lambda (x) (+ x 1)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (ert-deftest navorski-remote-term-setup-program-args-test ()
   (should (equal
            '((:program-args . ("-t" "/bin/bash")))
@@ -39,7 +34,6 @@
 
 (ert-deftest navorski-remote-term-setup-tramp ()
   (let* ((profile '((:use-tramp . nil))))
-    ;; WTF IS GOING ON.
     (should (null (-navorski-profile-get profile :use-tramp)))
     (should (equal
              '((:use-tramp . nil))
@@ -66,8 +60,6 @@
                (:program-path . "ssh"))
              output-profile))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (ert-deftest navorski-remote-term-setup-program-args-test ()
   (let ((profile '((:screen-session-name . "foo"))))
     (should (equal
@@ -82,8 +74,6 @@
                (:screen-args . ("-e^Tt"))
                (:program-args . ("-x" "-R" "-S" "foo" "-s" "/bin/bash" "-e^Tt")))
              (-navorski-persistent-term-setup-program-args profile)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (ert-deftest navorski-remote-term-to-local-term ()
   (let* ((profile '((:remote-host . "somehost")))
