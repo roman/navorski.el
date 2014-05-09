@@ -27,6 +27,24 @@
                                        :hello
                                        (lambda (x) (+ x 1)))))))
 
+(ert-deftest navorski-get-buffer-name-with-nil ()
+  "should return the value of default-directory"
+  (let ((profile '()))
+    (should (equal default-directory (-navorski-get-default-directory profile))))
+  (let ((profile '((:cwd . nil))))
+    (should (equal default-directory (-navorski-get-default-directory profile)))))
+
+(ert-deftest navorski-get-buffer-name-with-value ()
+  "should return the given value"
+  (let ((profile '((:cwd . "foo"))))
+    (should (equal "foo" (-navorski-get-default-directory profile)))))
+
+(ert-deftest navorski-get-buffer-name-with-value ()
+  "should receive default-directory and return new value"
+  (let ((profile '((:cwd . (lambda (dir) (format "foo-%s" dir))))))
+    (should (equal (format "foo-%s" default-directory)
+                   (-navorski-get-default-directory profile)))))
+
 (ert-deftest navorski-remote-term-setup-program-args-test ()
   (should (equal
            '((:program-args . ("-t" "/bin/bash")))

@@ -260,9 +260,10 @@
 ;;; end  -navorski-get-buffer-name
 
 (defun -navorski-get-default-directory (profile)
-  (let ((f (or (-navorski-profile-get profile :cwd)
-               'identity)))
-    (funcall f default-directory)))
+  (let ((cwd (-navorski-profile-get profile :cwd)))
+    (cond ((functionp cwd) (funcall cwd default-directory))
+          (cwd cwd)
+          (t default-directory))))
 
 (defun -navorski-get-init-script (profile)
   (-navorski-profile-setting-to-list
