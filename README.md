@@ -17,7 +17,7 @@ This extension will require:
 
 ## Installation
 
-Currently this extension is only available through [el-get](https://github.com/dimitri/el-get).
+You can install this extensions through MELPA
 
 ## Getting Started
 
@@ -54,7 +54,7 @@ navorski.el will use an SSH connection when a :remote-host option is
 provided, check out the documentation of `nav/defterminal` for all
 available options.
 
-## Why navorski?
+## Why the name navorski?
 
 Viktor Navorski is a fictional character from the movie [The
 Terminal](http://en.wikipedia.org/wiki/The_Terminal), that _lived_ in
