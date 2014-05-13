@@ -682,11 +682,13 @@ function eterm_set_variables {\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main functions
 
+;;;###autoload
 (defun nav/term (&optional profile)
   "Creates a multi-term on current directory"
   (interactive)
   (-navorski-get-buffer (-navorski-merge-alist '((:kill-buffer-on-stop . t)) profile)))
 
+;;;###autoload
 (defun nav/remote-term (&optional remote-profile)
   "Creates a multi-term in a remote host. A user + host (e.g
 user@host) value will be required to perform the connection."
@@ -696,6 +698,7 @@ user@host) value will be required to perform the connection."
     (-navorski-merge-alist '((:kill-buffer-on-stop . t))
                            remote-profile))))
 
+;;;###autoload
 (defun nav/persistent-term (&optional profile)
   "Creates a multi-term inside a GNU screen session. A screen
 session name is required."
@@ -705,6 +708,7 @@ session name is required."
     (-navorski-merge-alist '((:kill-buffer-on-stop . t))
                            profile))))
 
+;;;###autoload
 (defun nav/remote-persistent-term (&optional profile)
   "Creates multi-term buffer on a GNU screen session in a remote
 host. A user + host (e.g user@host) value is required as well as
@@ -716,6 +720,7 @@ a GNU screen session name."
      (-navorski-merge-alist '((:kill-buffer-on-stop . t))
                            profile)))))
 
+;;;###autoload
 (defun nav/setup-tramp ()
   "Setups tramp on a remote terminal"
   (interactive)
