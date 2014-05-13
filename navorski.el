@@ -54,20 +54,17 @@
 ;; Keybindings for terminal buffers
 
 (defun -navorski-term-reverse-search ()
-  (interactive)
   (if (term-in-line-mode)
       (isearch-backward)
     (term-send-reverse-search-history)))
 
 (defun -navorski-term-dabbrev ()
-  (interactive)
   (let ((beg (point)))
     (dabbrev-expand nil)
     (kill-region beg (point)))
   (term-send-raw-string (substring-no-properties (current-kill 0))))
 
 (defun -navorski-term-backward-kill-word ()
-  (interactive)
   (if (term-in-line-mode)
       (backward-kill-word 1)
     (term-send-backward-kill-word)))
@@ -85,13 +82,11 @@
   (term-send-raw-string (substring-no-properties (current-kill 0))))
 
 (defun -navorski-term-yank ()
-  (interactive)
   (if (term-in-line-mode)
       (yank)
     (term-paste)))
 
 (defun -navorski-interrupt-process ()
-  (interactive)
   (term-send-raw-string (kbd "C-C")))
 
 (setq term-bind-key-alist
@@ -107,7 +102,7 @@
         ("M-/" . -navorski-term-dabbrev)
         ("M-RET" . find-file-at-point)
         ("M-DEL" . -navorski-term-backward-kill-word)
-        ("M-`" . -navorski-term-insert-path)
+        ("M-t" . -navorski-term-insert-path)
         ("M-k" . term-send-raw-meta)
         ("M-y" . term-send-raw-meta)
         ("M-u" . term-send-raw-meta)
@@ -125,7 +120,6 @@
                      (term-send-raw-string "\e\C-t")))
         ("M-h" . term-send-raw-meta)
         ("M-s" . term-send-raw-meta)
-        ("M-t" . term-send-raw-meta)
 
         ("M-c" . term-send-raw-meta)
         ("M-l" . term-send-raw-meta)
@@ -534,7 +528,6 @@ function eterm_set_variables {\n"
 
        ;; nav/<profile-name>-get-buffer
        (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
-         (interactive)
          (-navorski-profile-get-buffer ',profile))
 
        ;; nav/<profile-name>-pop-to-buffer
@@ -692,21 +685,25 @@ function eterm_set_variables {\n"
 (defun nav/term (&optional profile)
   "Creates a multi-term on current directory"
   (interactive)
-  (-navorski-get-buffer (-navorski-merge-alist '(:kill-buffer-on-stop . t) profile)))
+  (-navorski-get-buffer (-navorski-merge-alist '((:kill-buffer-on-stop . t)) profile)))
 
 (defun nav/remote-term (&optional remote-profile)
   "Creates a multi-term in a remote host. A user + host (e.g
 user@host) value will be required to perform the connection."
   (interactive)
   (-navorski-get-buffer
-   (-navorski-remote-term-to-local-term remote-profile)))
+   (-navorski-remote-term-to-local-term
+    (-navorski-merge-alist '((:kill-buffer-on-stop . t))
+                           remote-profile))))
 
 (defun nav/persistent-term (&optional profile)
   "Creates a multi-term inside a GNU screen session. A screen
 session name is required."
   (interactive)
   (-navorski-get-buffer
-   (-navorski-persistent-term-to-local-term profile)))
+   (-navorski-persistent-term-to-local-term
+    (-navorski-merge-alist '((:kill-buffer-on-stop . t))
+                           profile))))
 
 (defun nav/remote-persistent-term (&optional profile)
   "Creates multi-term buffer on a GNU screen session in a remote
@@ -715,7 +712,9 @@ a GNU screen session name."
   (interactive)
   (-navorski-get-buffer
    (-navorski-remote-term-to-local-term
-    (-navorski-persistent-term-to-local-term profile))))
+    (-navorski-persistent-term-to-local-term
+     (-navorski-merge-alist '((:kill-buffer-on-stop . t))
+                           profile)))))
 
 (defun nav/setup-tramp ()
   "Setups tramp on a remote terminal"
