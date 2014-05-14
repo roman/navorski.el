@@ -497,17 +497,17 @@ function eterm_set_variables {\n"
 ;; Functions to use with a navorski profile
 
 (defun nav/pop-to-buffer (profile)
-  (pop-to-buffer (-navorski-profile-get-buffer profile)))
+  (pop-to-buffer (-navorski-get-buffer profile)))
 
 (defun nav/kill-buffer (profile &optional kill-process)
-  (let ((term-buffer (-navorski-profile-get-buffer profile)))
+  (let ((term-buffer (-navorski-get-buffer profile)))
     (when kill-process
       (set-process-query-on-exit-flag (get-buffer-process term-buffer) nil)
       (get-buffer-process term-buffer))
     (kill-buffer term-buffer)))
 
 (defun nav/send-string (profile str)
-  (with-current-buffer (-navorski-profile-get-buffer profile)
+  (with-current-buffer (-navorski-get-buffer profile)
     (let ((inhibit-read-only t))
          (term-send-raw-string (concat str "\n")))))
 
@@ -528,7 +528,7 @@ function eterm_set_variables {\n"
 
        ;; nav/<profile-name>-get-buffer
        (defun ,(intern (format "nav/%s-get-buffer" profile-name)) ()
-         (-navorski-profile-get-buffer ',profile))
+         (-navorski-get-buffer ',profile))
 
        ;; nav/<profile-name>-pop-to-buffer
        (defun ,(intern (format "nav/%s-pop-to-buffer" profile-name)) ()
