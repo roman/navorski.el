@@ -87,6 +87,9 @@
     (term-paste)))
 
 (defun -navorski-interrupt-process ()
+  ;; NOTE: interactive is needed here, otherwise
+  ;; C-c C-c doesn't work correctly
+  (interactive)
   (term-send-raw-string (kbd "C-C")))
 
 (setq term-bind-key-alist
