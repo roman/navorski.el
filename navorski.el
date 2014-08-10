@@ -1,11 +1,11 @@
 ;;; navorski.el --- Helping you live in the terminal, like Viktor did.
 
-;; Copyright (C) 2013, 2014 Roman Gonzalez .
+;; Copyright (C) 2013, 2014 Roman Gonzalez.
 ;; Copyright (C) 2013 Birdseye Software, Inc.
 
 ;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
 ;; Mantainer: Roman Gonzalez <romanandreg@gmail.com>
-;; Version: 0.2.1
+;; Version: 0.2.4
 ;; Package-Requires: ((dash "1.5.0") (multi-term "0.8.14"))
 ;; Keywords: terminal
 
