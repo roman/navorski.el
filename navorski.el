@@ -53,18 +53,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Keybindings for terminal buffers
 
+;; IMPORTANT: all terminal keybindings need to be interactive
+;; otherwise they won't work
+
 (defun -navorski-term-reverse-search ()
+  (interactive)
   (if (term-in-line-mode)
       (isearch-backward)
     (term-send-reverse-search-history)))
 
 (defun -navorski-term-dabbrev ()
+  (interactive)
   (let ((beg (point)))
     (dabbrev-expand nil)
     (kill-region beg (point)))
   (term-send-raw-string (substring-no-properties (current-kill 0))))
 
 (defun -navorski-term-backward-kill-word ()
+  (interactive)
   (if (term-in-line-mode)
       (backward-kill-word 1)
     (term-send-backward-kill-word)))
@@ -82,6 +88,7 @@
   (term-send-raw-string (substring-no-properties (current-kill 0))))
 
 (defun -navorski-term-yank ()
+  (interactive)
   (if (term-in-line-mode)
       (yank)
     (term-paste)))
