@@ -5,8 +5,8 @@
 
 ;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
 ;; Mantainer: Roman Gonzalez <romanandreg@gmail.com>
-;; Version: 0.2.5
-;; Package-Requires: ((dash "1.5.0") (multi-term "0.8.14"))
+;; Version: 0.2.6
+;; Package-Requires: ((s "1.9.0") (dash "1.5.0") (multi-term "0.8.14"))
 ;; Keywords: terminal
 
 ;; This file is not part of GNU Emacs.
@@ -275,6 +275,12 @@
   (-navorski-profile-setting-to-list
    (-navorski-profile-get profile :program-args)))
 
+(defun -navorski-get-hostname (profile)
+  (let ((remote-host (-navorski-profile-get profile :remote-host)))
+    (if (s-index-of "@" remote-host)
+        (second (s-split "@" remote-host))
+      remote-host)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terminal buffer sentinels and filters
 
@@ -387,7 +393,7 @@ function eterm_set_variables {\n"
 (if remote-host
   (format  "local tramp_hostname=\"%s\"\n" remote-host)
 "local tramp_hostname=${TRAMP_HOSTNAME-$(hostname)}\n")
-"if [[ $TERM == \"eterm-color\" ]]; then\n"
+"if [[ $TERM == \"eterm-color\" || $TERM == \"xterm\" || $TERM  == \"xterm-256color\" ]]; then\n"
 "    if [[ $tramp_hostname != \"$emacs_host\" ]]; then\n"
 "       echo -e \"\\033AnSiTu\" ${TRAMP_USERNAME-$(whoami)}\n"
 "       echo -e \"\\033AnSiTh\" $tramp_hostname\n"
@@ -442,7 +448,9 @@ function eterm_set_variables {\n"
          profile
          :init-script
          (lambda (val)
-           (append val (list (-navorski-remote-term-setup-tramp-string profile)))))
+           (append val
+                   (list (-navorski-remote-term-setup-tramp-string
+                          (-navorski-get-hostname profile))))))
       profile)))
 
 (defun -navorski-remote-term-setup-remote-host (profile)
