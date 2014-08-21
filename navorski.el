@@ -5,7 +5,7 @@
 
 ;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
 ;; Mantainer: Roman Gonzalez <romanandreg@gmail.com>
-;; Version: 0.2.4
+;; Version: 0.2.5
 ;; Package-Requires: ((dash "1.5.0") (multi-term "0.8.14"))
 ;; Keywords: terminal
 
@@ -151,11 +151,6 @@
         ("M-d" . term-send-forward-kill-word)
         ("C-y" . -navorski-term-yank)
 
-        ;; ("M-g" . -navorski-term-toggle-mode)
-        ;; ("M-]" . -navorski-term-cd-dir-path)
-        ;; ("M-;" . -navorski-term-insert-dir-path)
-        ;; ("M-'" . -navorski-term-insert-file-path)
-        ;; ("M-\"" . -navorski-term-toggle-filename-rel-abs)
         ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -357,7 +352,7 @@
 
       term-buffer)))
 
-(defun -navorski-get-buffer (profile)
+(defun -navorski-get-raw-buffer (profile)
   "Get term buffer."
   (with-temp-buffer
     (let* ((buffer-name  (-navorski-get-buffer-name profile))
@@ -366,6 +361,17 @@
                              (-navorski-create-term-buffer profile))))
       (switch-to-buffer term-buffer)
       term-buffer)))
+
+(defun -navorski-get-buffer (profile0)
+  (let* ((remote-host (-navorski-profile-get profile0 :remote-host))
+        (screen-name (-navorski-profile-get profile0 :screen-session-name))
+        (profile1 (if screen-name
+                      (-navorski-persistent-term-to-local-term profile)
+                    profile0))
+        (profile (if remote-host
+                     (-navorski-remote-term-to-local-term profile1)
+                   profile1)))
+    (-navorski-get-raw-buffer profile)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tramp configuration code
@@ -412,12 +418,6 @@ function eterm_set_variables {\n"
 "export -f eterm_set_cwd\n"
 "clear\n"
 "echo \"tramp initialized\""))
-
-;; (defun -navorski-get-ssh-host (profile)
-;;   (let ((user-host (split-string (aget profile :remote-host) "@")))
-;;     (if (= (length user-host) 1)
-;;         (car user-host)
-;;       (nth 1 user-host))))
 
 (defun -navorski-remote-term-setup-program-args (profile)
   (let ((remote-host (-navorski-profile-get profile :remote-host))
@@ -530,10 +530,12 @@ function eterm_set_variables {\n"
 (defmacro -navorski-def-interactive (profile-name profile)
   (when (-navorski-get-interactive profile)
     `(progn
+       (defvar ,(intern (format "nav-%s-profile" profile-name)) ',profile)
+
        (define-minor-mode ,(intern (format "%s-terminal-mode" profile-name))
          ,(format "Minor mode for navorski terminal `%s'." profile-name)
          nil
-         :group `,(intern "%s-navorski-terminal" profile-name)
+         :group `,(intern (format "%s-navorski-terminal" profile-name))
          :keymap (make-sparse-keymap))
 
        ;; nav/<profile-name>-get-buffer
@@ -692,18 +694,20 @@ function eterm_set_variables {\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main functions
 
+
+
 ;;;###autoload
 (defun nav/term (&optional profile)
   "Creates a multi-term on current directory"
   (interactive)
-  (-navorski-get-buffer (-navorski-merge-alist '((:kill-buffer-on-stop . t)) profile)))
+  (-navorski-get-raw-buffer (-navorski-merge-alist '((:kill-buffer-on-stop . t)) profile)))
 
 ;;;###autoload
 (defun nav/remote-term (&optional remote-profile)
   "Creates a multi-term in a remote host. A user + host (e.g
 user@host) value will be required to perform the connection."
   (interactive)
-  (-navorski-get-buffer
+  (-navorski-get-raw-buffer
    (-navorski-remote-term-to-local-term
     (-navorski-merge-alist '((:kill-buffer-on-stop . t))
                            remote-profile))))
@@ -713,7 +717,7 @@ user@host) value will be required to perform the connection."
   "Creates a multi-term inside a GNU screen session. A screen
 session name is required."
   (interactive)
-  (-navorski-get-buffer
+  (-navorski-get-raw-buffer
    (-navorski-persistent-term-to-local-term
     (-navorski-merge-alist '((:kill-buffer-on-stop . t))
                            profile))))
@@ -724,7 +728,7 @@ session name is required."
 host. A user + host (e.g user@host) value is required as well as
 a GNU screen session name."
   (interactive)
-  (-navorski-get-buffer
+  (-navorski-get-raw-buffer
    (-navorski-remote-term-to-local-term
     (-navorski-persistent-term-to-local-term
      (-navorski-merge-alist '((:kill-buffer-on-stop . t))

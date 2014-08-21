@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package "navorski" "0.2.4"
+(package "navorski" "0.2.5"
          "Define profiles for local/remote terminals and services on emacs")
 
 (package-file "navorski.el")
