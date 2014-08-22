@@ -55,7 +55,7 @@ keybindings or helper functions to interact with this process buffer.
   :init-script ("cd project-path" "bundle exec rails c") ;; (4)
   )
 
-;; M-x: nav/rails-console-production-pop-to-buffer
+;; M-x: nav/production-console-pop-to-buffer
 ;; will open a new buffer to a production rails console
 
 (nav/defterminal foobar-ipython
@@ -102,7 +102,7 @@ working with remote terminals. Just need to provide the
 
 Another way to create a persistent-terminal without a `defterminal`
 profile is via the function `nav/persistent-term`. It's important to
-note that the `:program-args` paramenter will not work when using
+note that the `:program-args` parameter will not work when using
 persistent terminals, this is a limitation of the GNU Screen
 program. You can however trick this by creating a custom bash script
 with all the arguments you need and call that script from navorski
