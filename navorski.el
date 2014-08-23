@@ -149,9 +149,7 @@
         ("" . term-send-backward-word)
         ("" . term-send-forward-word)
         ("M-d" . term-send-forward-kill-word)
-        ("C-y" . -navorski-term-yank)
-
-        ))
+        ("C-y" . -navorski-term-yank)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils
@@ -370,13 +368,13 @@
 
 (defun -navorski-get-buffer (profile0)
   (let* ((remote-host (-navorski-profile-get profile0 :remote-host))
-        (screen-name (-navorski-profile-get profile0 :screen-session-name))
-        (profile1 (if screen-name
-                      (-navorski-persistent-term-to-local-term profile)
-                    profile0))
-        (profile (if remote-host
-                     (-navorski-remote-term-to-local-term profile1)
-                   profile1)))
+         (screen-name (-navorski-profile-get profile0 :screen-session-name))
+         (profile1 (if screen-name
+                       (-navorski-persistent-term-to-local-term profile)
+                     profile0))
+         (profile (if remote-host
+                      (-navorski-remote-term-to-local-term profile1)
+                    profile1)))
     (-navorski-get-raw-buffer profile)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -527,7 +525,7 @@ function eterm_set_variables {\n"
 (defun nav/send-string (profile str)
   (with-current-buffer (-navorski-get-buffer profile)
     (let ((inhibit-read-only t))
-         (term-send-raw-string (concat str "\n")))))
+      (term-send-raw-string (concat str "\n")))))
 
 (defun nav/send-region (profile start end)
   (nav/send-string profile (buffer-substring start end)))
@@ -740,7 +738,7 @@ a GNU screen session name."
    (-navorski-remote-term-to-local-term
     (-navorski-persistent-term-to-local-term
      (-navorski-merge-alist '((:kill-buffer-on-stop . t))
-                           profile)))))
+                            profile)))))
 
 ;;;###autoload
 (defun nav/setup-tramp ()
