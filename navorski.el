@@ -749,6 +749,17 @@ a GNU screen session name."
     (-navorski-remote-term-setup-tramp-string)
     "\n")))
 
+;;;###autoload
+(defun nav/tramp-to-term ()
+  "Creates a terminal from the current TRAMP buffer."
+  (interactive)
+  (require 'tramp)
+  (with-parsed-tramp-file-name default-directory nil
+      (nav/remote-term
+       `((:kill-buffer-on-stop . t)
+         (:remote-host . ,(concat user "@" host))
+         (:program-args . (,(concat "-c 'cd " localname " && bash -l'")))))))
+
 ;; End:
 (provide 'navorski)
 ;;; navorski.el ends here
