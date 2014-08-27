@@ -5,7 +5,7 @@
 
 ;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
 ;; Maintainer: Roman Gonzalez <romanandreg@gmail.com>
-;; Version: 0.2.6
+;; Version: 0.2.7
 ;; Package-Requires: ((s "1.9.0") (dash "1.5.0") (multi-term "0.8.14"))
 ;; Keywords: terminal
 
