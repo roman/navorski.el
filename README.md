@@ -12,12 +12,31 @@ and Gentoo.
 
 This extension will require:
 
+* [s.el](https://github.com/magnars/s.el)
 * [dash.el](https://github.com/magnars/dash.el)
 * [multi-term](https://github.com/emacsmirror/multi-term)
 
 ## Installation
 
-You can install this extensions through MELPA
+### Melpa
+
+You can install this extensions through
+[MELPA](https://github.com/milkypostman/melpa)
+
+### Cask
+
+If you want to use the _bleeding edge_ version of navorski in your
+emacs setup add this to your [Cask](https://github.com/cask/cask) file
+(note you'll need cask >= 0.7.1)
+
+```elisp
+(depends-on "navorski"
+            :git "https://github.com/roman/navorski.el.git")
+```
+
+You can also specify the `depends-on` without the git option, and it
+should download the last stable version.
+
 
 ## Getting Started
 
@@ -140,6 +159,30 @@ inferior mode.
 Viktor Navorski is a fictional character from the movie [The
 Terminal](http://en.wikipedia.org/wiki/The_Terminal), that _lived_ in
 a terminal. Got the pun right?
+
+## Development
+
+Pull requests are very welcome! Please try to follow these simple rules if applicable:
+
+* Please create a topic branch for every separate change you make.
+
+* Update the README file.
+
+* Please **do not change** the version number.
+
+#### Open Commit Bit
+
+navorski.el has an open commit bit policy: Anyone with an accepted
+pull request gets added as a repository collaborator.  Please try to
+follow these simple rules:
+
+* Commit directly onto the master branch only for typos, improvements
+  to the readme and documentation.
+
+* Create a feature branch and open a pull-request early for any new
+  features to get feedback.
+
+* Make sure you adhere to the general pull request rules above.
 
 ## License
 
