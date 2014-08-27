@@ -4,7 +4,7 @@
 ;; Copyright (C) 2013 Birdseye Software, Inc.
 
 ;; Author: Roman Gonzalez <romanandreg@gmail.com>, Tavis Rudd <tavis@birdseye-sw.com>
-;; Mantainer: Roman Gonzalez <romanandreg@gmail.com>
+;; Maintainer: Roman Gonzalez <romanandreg@gmail.com>
 ;; Version: 0.2.6
 ;; Package-Requires: ((s "1.9.0") (dash "1.5.0") (multi-term "0.8.14"))
 ;; Keywords: terminal
@@ -149,9 +149,7 @@
         ("" . term-send-backward-word)
         ("" . term-send-forward-word)
         ("M-d" . term-send-forward-kill-word)
-        ("C-y" . -navorski-term-yank)
-
-        ))
+        ("C-y" . -navorski-term-yank)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils
@@ -370,13 +368,13 @@
 
 (defun -navorski-get-buffer (profile0)
   (let* ((remote-host (-navorski-profile-get profile0 :remote-host))
-        (screen-name (-navorski-profile-get profile0 :screen-session-name))
-        (profile1 (if screen-name
-                      (-navorski-persistent-term-to-local-term profile)
-                    profile0))
-        (profile (if remote-host
-                     (-navorski-remote-term-to-local-term profile1)
-                   profile1)))
+         (screen-name (-navorski-profile-get profile0 :screen-session-name))
+         (profile1 (if screen-name
+                       (-navorski-persistent-term-to-local-term profile)
+                     profile0))
+         (profile (if remote-host
+                      (-navorski-remote-term-to-local-term profile1)
+                    profile1)))
     (-navorski-get-raw-buffer profile)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -527,7 +525,7 @@ function eterm_set_variables {\n"
 (defun nav/send-string (profile str)
   (with-current-buffer (-navorski-get-buffer profile)
     (let ((inhibit-read-only t))
-         (term-send-raw-string (concat str "\n")))))
+      (term-send-raw-string (concat str "\n")))))
 
 (defun nav/send-region (profile start end)
   (nav/send-string profile (buffer-substring start end)))
@@ -740,7 +738,7 @@ a GNU screen session name."
    (-navorski-remote-term-to-local-term
     (-navorski-persistent-term-to-local-term
      (-navorski-merge-alist '((:kill-buffer-on-stop . t))
-                           profile)))))
+                            profile)))))
 
 ;;;###autoload
 (defun nav/setup-tramp ()
@@ -750,6 +748,17 @@ a GNU screen session name."
    (concat
     (-navorski-remote-term-setup-tramp-string)
     "\n")))
+
+;;;###autoload
+(defun nav/tramp-to-term ()
+  "Creates a terminal from the current TRAMP buffer."
+  (interactive)
+  (require 'tramp)
+  (with-parsed-tramp-file-name default-directory nil
+      (nav/remote-term
+       `((:kill-buffer-on-stop . t)
+         (:remote-host . ,(concat user "@" host))
+         (:program-args . (,(concat "-c 'cd " localname " && bash -l'")))))))
 
 ;; End:
 (provide 'navorski)
