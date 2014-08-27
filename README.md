@@ -146,7 +146,7 @@ a terminal. Got the pun right?
 ```
  navorski.el - Making you live in the terminal
 
- Copyright (C) 2014  Roman Gonzalez.
+ Copyright (C) 2014  Roman Gonzalez and collaborators.
  Copyright (C) 2013  Roman Gonzalez, Birdseye Software Inc.
 
  This program is free software: you can redistribute it and/or modify
