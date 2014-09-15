@@ -31,6 +31,9 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'tramp)) ; required because `with-parsed-tramp-file-name' is a macro
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Variables
 
