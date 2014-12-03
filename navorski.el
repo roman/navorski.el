@@ -228,25 +228,21 @@
 ;;; start -navorski-get-buffer-name
 
 (defun -navorski-indexed-buffer-name (buffer-name &optional current-index)
-  (if current-index
+  (if (> current-index 0)
       (format "%s<%s>"
               buffer-name
               current-index)
     (format "%s" buffer-name)))
 
+(defun -navorski-get-unnamed-terminal-count ()
+  (length (--filter (string-match "\*terminal" (buffer-name it))
+                    (buffer-list))))
+
 (defun -navorski-next-buffer-name (&optional buffer-name)
-  (let* ((term-count        (length multi-term-buffer-list))
-         (current-index     nil)
+  (let* ((term-count        (-navorski-get-unnamed-terminal-count))
          (buffer-name       (or buffer-name
                                 navorski-buffer-name)))
-    (while (buffer-live-p
-            (get-buffer
-             (format "*%s*"
-                     (-navorski-indexed-buffer-name
-                      buffer-name
-                      current-index))))
-      (setq current-index (if term-count (1+ term-count) 1)))
-    (-navorski-indexed-buffer-name buffer-name current-index)))
+    (-navorski-indexed-buffer-name buffer-name term-count)))
 
 (defun -navorski-get-buffer-name (profile)
   (let ((buffer-name (format "%s"
