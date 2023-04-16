@@ -96,9 +96,9 @@
 (ert-deftest navorski-remote-term-to-local-term ()
   (let* ((profile '((:remote-host . "somehost")))
          (result (-navorski-remote-term-to-local-term profile)))
-    (should (string-equal "ssh" (aget result :program-path)))
+    (should (string-equal "ssh" (cdr (assq :program-path result))))
     (should (equal (list "-t" "somehost" "/bin/bash")
-                   (aget result :program-args)))))
+                   (cdr (assq :program-args) result)))))
 
 (ert-deftest navorski-get-buffer-name-test ()
   "Checks that buffer name is being returned correctly"
