@@ -26,7 +26,6 @@
 
 (require 'time-stamp)
 (require 'multi-term)
-(require 'assoc)
 (require 'dash)
 
 ;;; Code:
@@ -187,7 +186,7 @@
 ;;;;;;;;;; General
 
 (defun -navorski-profile-get (profile key &optional def)
-  (let ((result (aget profile key)))
+  (let ((result (cdr (assoc key profile))))
     (if (equal result key)
         nil
       result)))
@@ -246,10 +245,10 @@
 
 (defun -navorski-get-buffer-name (profile)
   (let ((buffer-name (format "%s"
-                             (or (aget profile :buffer-name)
-                                 (aget profile :profile-name)
+                             (or (cdr (assq :buffer-name profile))
+                                 (cdr (assq :profile-name profile))
                                  "terminal"))))
-    (if (aget profile :unique)
+    (if (cdr (assq :unique profile))
         buffer-name
       (-navorski-next-buffer-name buffer-name))))
 
@@ -359,7 +358,7 @@
   "Get term buffer."
   (with-temp-buffer
     (let* ((buffer-name  (-navorski-get-buffer-name profile))
-           (term-buffer  (or (and (aget profile :unique)
+           (term-buffer  (or (and (cdr (assq :unique profile))
                                   (get-buffer buffer-name))
                              (-navorski-create-term-buffer profile))))
       (switch-to-buffer term-buffer)
